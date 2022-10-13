@@ -1,0 +1,5 @@
+NAME   mp3.exe
+SYSTEM DOS
+OPTION MAP
+OPTION STACK=30k
+FILE   {mp3dec.obj mp3tabs.obj bitstream.obj buffers.obj dct32.obj dequant.obj dqchan.obj huffman.obj hufftabs.obj imdct.obj polyphase.obj scalfact.obj stproc.obj subband.obj trigtabs.obj main.obj}
