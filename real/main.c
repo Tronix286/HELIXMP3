@@ -44,12 +44,27 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#include <time.h>
 
 #include "mp3dec.h"
 
 #define READBUF_SIZE		(1024L*16)	/* feel free to change this, but keep big enough for >= one frame at high bitrates */
 //#define MAX_ARM_FRAMES		100
 //#define ARMULATE_MUL_FACT	1
+
+void format_elapsed_time(char *time_str, double elapsed) {
+    int32_t h, m, s, ms;
+
+    h = m = s = ms = 0;
+    ms = elapsed * 1000; // promote the fractional part to milliseconds
+    h = ms / 3600000;
+    ms -= (h * 3600000);
+    m = ms / 60000;
+    ms -= (m * 60000);
+    s = ms / 1000;
+    ms -= (s * 1000);
+    sprintf(time_str, "%02li:%02li:%02li.%03li", h, m, s, ms);
+}
 
 static int write_little_endian_uint16(FILE *f, uint16_t x)
 {
@@ -92,11 +107,13 @@ int main(int argc, char **argv)
 	FILE *infile, *outfile;
 	MP3FrameInfo mp3FrameInfo;
 	HMP3Decoder hMP3Decoder;
-	int32_t startTime, endTime, diffTime, totalDecTime, nFrames;
+	int32_t nFrames;
+	time_t start_time,end_time;
 	uint32_t total_size;
-#ifdef ARM_ADS	
-	float audioSecs;
-#endif
+	char tmp[80];
+
+	printf("MP3 decoder 16bit v1.0      (c) Tronix 2022\n");
+	printf("Helix MP3 decoder Copyright (c) 1995-2004 RealNetworks\n\n");
 
 	if (argc != 3) {
 		printf("usage: mp3dec infile.mp3 outfile.pcm\n");
@@ -118,23 +135,20 @@ int main(int argc, char **argv)
 		outfile = 0;	/* nul output */
 	}
 
-	//DebugMemCheckInit();
-	//InitTimer();
-	
-	//DebugMemCheckStartPoint();
 
-	if ( (hMP3Decoder = MP3InitDecoder()) == 0 )
+	if ( (hMP3Decoder = MP3InitDecoder()) == 0 ) {
+		printf("no free memory\n");
 		return -2;
-
-	//DebugMemCheckEndPoint();
+	}
 
 	bytesLeft = 0;
 	outOfData = 0;
 	eofReached = 0;
 	readPtr = readBuf;
 	nRead = 0;
-	totalDecTime = 0;
 	nFrames = 0;
+	start_time = time(NULL);
+
 	do {
 		/* somewhat arbitrary trigger to refill buffer - should always be enough for a full frame */
 		if (bytesLeft < 2*MAINBUF_SIZE && !eofReached) {
@@ -158,7 +172,6 @@ int main(int argc, char **argv)
 		/* decode one MP3 frame - if offset < 0 then bytesLeft was less than a full frame */
 		//startTime = ReadTimer();
  		err = MP3Decode(hMP3Decoder, &readPtr, &bytesLeft, outBuf, 0);
- 		nFrames++;
  		
  		//endTime = ReadTimer();
  		//diffTime = CalcTimeDifference(startTime, endTime);
@@ -169,7 +182,7 @@ int main(int argc, char **argv)
 		fflush(stdout);
 
 		if (err) {
-			printf("err occur: %d\n",err);
+			printf("err occur: %s\n",DecoderErrorStatusString[abs(err)]);
 			/* error occurred */
 			switch (err) {
 			case ERR_MP3_INDATA_UNDERFLOW:
@@ -184,6 +197,7 @@ int main(int argc, char **argv)
 				break;
 			}
 		} else {
+ 			nFrames++;
 			/* no error */
 			MP3GetLastFrameInfo(hMP3Decoder, &mp3FrameInfo);
 
@@ -227,8 +241,9 @@ int main(int argc, char **argv)
 	if (outfile)
 		fclose(outfile);
 
-	//FreeTimer();
-	//DebugMemCheckFree();
+	end_time=time(NULL);
+	format_elapsed_time(tmp,difftime(end_time,start_time));
+	fprintf(stderr,"Elapsed time: %s\n",tmp);
 
 	return 0;
 }
