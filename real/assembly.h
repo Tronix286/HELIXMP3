@@ -414,14 +414,8 @@ static __inline Word64 SAR64(Word64 x, int n)
 	return (x >> n);
 }
 
-#elif defined(PUREC)
+#elif defined(BITS16)
 #include <stdint.h>
-
-/*
-static __inline int32_t MULSHIFT32(int32_t x, int32_t y) {
-	return (int32_t) ((((long long) x) * y ) >> 32);
-}
-*/
 
 static int32_t MULSHIFT32(int32_t x, int32_t y);
 #pragma aux MULSHIFT32 = \
@@ -446,8 +440,8 @@ static int32_t MULSHIFT32(int32_t x, int32_t y);
 "		mov si,ax	                            "\
 "		mov di,dx	                          "\
 "		MUL		BX                                 "\
-"		;PUSH	DX                                         "\
-"		PUSH	AX                                         "\
+"		PUSH	DX                                         "\
+"		;PUSH	AX                                         "\
 "		                                                   "\
 "P2_1:		                "\
 "		mov ax,si                                          "\
@@ -572,16 +566,114 @@ mul32_1:
 }
 */
 
-static __inline int64_t SAR64(int64_t x, int32_t n) {
-	return x >> n;
-}
+// SAR64 redifine, skip N count. N = 20
+#define SAR64(a,b) SAR64A(a)
 
-/*
-static __inline int64_t MADD64(int64_t sum64, int32_t x, int32_t y)
-{
-	return (sum64 + ((long long)x * y));
-}
-*/
+// SAR64(x) 20 times
+static __inline int64_t SAR64A(int64_t x);
+#pragma aux SAR64A = \
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+\
+"	sar ax,1"\
+"	rcr bx,1"\
+"	rcr cx,1"\
+"	rcr dx,1"\
+parm [ ax bx cx dx ] \
+modify [ ax dx bx cx ];
+
 
 static inline int64_t MUL32A(int32_t x, int32_t y);
 #pragma aux MUL32A = \
@@ -682,11 +774,53 @@ static __inline int CLZ(int32_t x)
 	return numZeros;
 }
 
-//static __inline uint64_t SHL64(uint64_t x, int32_t n)
-//{
-//	return (x<<n);
-//}
 
+
+#elif defined(PUREC)
+
+// PURE C implementation
+
+static __inline int64_t SAR64(int64_t x, uint16_t n) {
+	return x >> n;
+}
+
+
+static __inline int64_t MADD64(int64_t sum64, int32_t x, int32_t y)
+{
+	return (sum64 + ((long long)x * y));
+}
+
+
+static __inline int32_t MULSHIFT32(int32_t x, int32_t y) {
+	return (int32_t) ((((long long) x) * y ) >> 32);
+}
+
+
+static __inline uint64_t SHL64(uint64_t x, int32_t n)
+{
+	return (x<<n);
+}
+
+static __inline int32_t FASTABS(int32_t x)
+{
+  return((x > 0) ? x : -(x));
+}
+
+static __inline int CLZ(int32_t x)
+{
+	int numZeros;
+
+	if (!x)
+		return (sizeof(int32_t) * 8);
+
+	numZeros = 0;
+	while (!(x & 0x80000000)) {
+		numZeros++;
+		x <<= 1;
+	} 
+
+	return numZeros;
+}
 
 #else
 

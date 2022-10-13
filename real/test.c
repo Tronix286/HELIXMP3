@@ -16,9 +16,11 @@ int i;
 	for (i = 1; i < 10; i++)
 	{
 		x = rand()*640000;
-		y = rand()*640000;
+		y = rand()%16;
 		sum = rand()*640000;
-		printf("x=%li (%lx); y=%li (%lx); etalon= %li\n",x,x,y,y,MULSHIFT32(x,y));
-		printf("x=%li (%lx); y=%li (%lx); testas= %li\n",x,x,y,y,MULSHIFT32A(x,y));
+//		printf("x=%li (%lx); y=%li (%lx); etalon= %li\n",x,x,y,y,MULSHIFT32(x,y));
+//		printf("x=%li (%lx); y=%li (%lx); testas= %li\n",x,x,y,y,MULSHIFT32A(x,y));
+		printf("x=%li (%lx); y=%li (%lx); etalon= %li\n",x,x,y,y,SAR64(x,y));
+		printf("x=%li (%lx); y=%li (%lx); testas= %li\n",x,x,y,y,SAR64A(x,y));
 	}
 }

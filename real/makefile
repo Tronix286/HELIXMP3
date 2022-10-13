@@ -28,7 +28,7 @@
 #CCOPTS = $(EXTERNOPT) -onatx -oh -oi -ei -zp8 -2 -fpi87 -fp2 -ml -s -omaxet -i=include -i=.\..\..\include -za99 -dHAVE_CONFIG_H -dFLAC__NO_ASM
 
 # no fpu build
-CCOPTS = $(EXTERNOPT) -ml -oneatx -oh -oi -ei -zp4 -0 -fpi -i=.\..\pub -dPUREC
+CCOPTS = $(EXTERNOPT) -ml -oneatx -oh -oi -ei -zp4 -0 -fpi -i=.\..\pub -dBITS16
 
 #//-omaxet
 #wcc fixed.obj -i=include -i=.\..\..\include -za99

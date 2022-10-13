@@ -58,7 +58,7 @@
 
 static __inline short ClipToShort(int32_t x, int32_t fracBits)
 {
-	int32_t sign;
+	int16_t sign;
 	
 	/* assumes you've already rounded (x += (1 << (fracBits-1))) */
 	x >>= fracBits;
