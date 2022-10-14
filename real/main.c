@@ -115,6 +115,28 @@ static int FillReadBuffer(unsigned char *readBuf, unsigned char *readPtr, int32_
 	return nRead;
 }
 
+static void WriteWaveHeader(uint32_t total_bytes, uint32_t nChans, uint32_t samprate, uint32_t bitsPerSample, FILE*f)
+{
+	uint32_t total_size;
+	total_size = total_bytes * nChans * samprate * (bitsPerSample / 8);
+	if(
+		fwrite("RIFF", 1, 4, f) < 4 ||
+		!write_little_endian_uint32(f, total_size + 36) ||
+		fwrite("WAVEfmt ", 1, 8, f) < 8 ||
+		!write_little_endian_uint32(f, 16) ||
+		!write_little_endian_uint16(f, 1) ||
+		!write_little_endian_uint16(f, (uint16_t)nChans) ||
+		!write_little_endian_uint32(f, samprate) ||
+		!write_little_endian_uint32(f, samprate * nChans * (bitsPerSample / 8)) ||
+		!write_little_endian_uint16(f, (uint16_t)(nChans * (bitsPerSample / 8))) || /* block align */
+		!write_little_endian_uint16(f, (uint16_t)bitsPerSample) ||
+		fwrite("data", 1, 4, f) < 4 ||
+		!write_little_endian_uint32(f, total_size)
+	) {
+		printf("ERROR: write error\n");
+	}
+}
+
 int main(int argc, char **argv)
 {
 	int32_t bytesLeft, nRead, err, offset, outOfData, eofReached;
@@ -125,7 +147,6 @@ int main(int argc, char **argv)
 	HMP3Decoder hMP3Decoder;
 	int32_t nFrames;
 	time_t start_time,end_time;
-	uint32_t total_size;
 	char tmp[80];
 
 	printf("MP3 decoder 16bit v1.0      (c) Tronix 2022\n");
@@ -219,26 +240,8 @@ int main(int argc, char **argv)
 
 			/* write WAVE header before we write the first frame */
 			if(nFrames == 1) {
-				total_size = mp3FrameInfo.outputSamps * mp3FrameInfo.nChans * mp3FrameInfo.samprate * (mp3FrameInfo.bitsPerSample / 8);
-				printf("Total size = %lu\n",total_size);
-				if(
-				fwrite("RIFF", 1, 4, outfile) < 4 ||
-				!write_little_endian_uint32(outfile, total_size + 36) ||
-				fwrite("WAVEfmt ", 1, 8, outfile) < 8 ||
-				!write_little_endian_uint32(outfile, 16) ||
-				!write_little_endian_uint16(outfile, 1) ||
-				!write_little_endian_uint16(outfile, (uint16_t)mp3FrameInfo.nChans) ||
-				!write_little_endian_uint32(outfile, mp3FrameInfo.samprate) ||
-				!write_little_endian_uint32(outfile, mp3FrameInfo.samprate * mp3FrameInfo.nChans * (mp3FrameInfo.bitsPerSample / 8)) ||
-				!write_little_endian_uint16(outfile, (uint16_t)(mp3FrameInfo.nChans * (mp3FrameInfo.bitsPerSample / 8))) || /* block align */
-				!write_little_endian_uint16(outfile, (uint16_t)mp3FrameInfo.bitsPerSample) ||
-				fwrite("data", 1, 4, outfile) < 4 ||
-				!write_little_endian_uint32(outfile, total_size)
-				) {
-					printf("ERROR: write error\n");
-					return 0;
-				}
-	}
+				WriteWaveHeader(0, mp3FrameInfo.nChans, mp3FrameInfo.samprate, mp3FrameInfo.bitsPerSample, outfile);
+			}
 
 			if (outfile)
 				fwrite(outBuf, mp3FrameInfo.bitsPerSample / 8, mp3FrameInfo.outputSamps, outfile);
@@ -249,7 +252,11 @@ int main(int argc, char **argv)
 
 
 	MP3GetLastFrameInfo(hMP3Decoder, &mp3FrameInfo);
-	printf("nFrames = %ld, output samps = %ld, sampRate = %ld, nChans = %ld\n", nFrames, mp3FrameInfo.outputSamps, mp3FrameInfo.samprate, mp3FrameInfo.nChans);
+	printf("\ntotal size = %lu\n",nFrames * mp3FrameInfo.outputSamps * (mp3FrameInfo.bitsPerSample / 8));
+
+	fseek(outfile, 0L, 0);         /*-- pos to header --*/
+	
+	WriteWaveHeader(nFrames * mp3FrameInfo.outputSamps * (mp3FrameInfo.bitsPerSample / 8), mp3FrameInfo.nChans, mp3FrameInfo.samprate, mp3FrameInfo.bitsPerSample, outfile);
 
 	MP3FreeDecoder(hMP3Decoder);
 

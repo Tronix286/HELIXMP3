@@ -56,6 +56,49 @@
 #define DEF_NFRACBITS	(DQ_FRACBITS_OUT - 2 - 2 - 15)	
 #define CSHIFT	12	/* coefficients have 12 leading sign bits for early-terminating mulitplies */
 
+#ifdef BITS16
+#define ClipToShort(a,b) ClipToShortA(a)
+static __inline short ClipToShortA(int32_t x);
+#pragma aux ClipToShortA = \
+"	sar dx,1"\
+"	rcr ax,1"\
+\
+"	sar dx,1"\
+"	rcr ax,1"\
+\
+"	sar dx,1"\
+"	rcr ax,1"\
+\
+"	sar dx,1"\
+"	rcr ax,1"\
+\
+"	sar dx,1"\
+"	rcr ax,1"\
+\
+"	sar dx,1"\
+"	rcr ax,1"\
+\
+"	cmp     dx,-1"\
+"       jz      s_ax_to_all_bits_dx"\
+"       cmp     dx,0"\
+"       jl      ret_minint_ax"\
+"       ja      ret_maxint_ax"\
+"       test    ax,ax"\
+"       jns     end_clip"\
+"ret_maxint_ax:"\
+"       mov     ax,0x7FFF"\
+"       jmp     end_clip"\
+"s_ax_to_all_bits_dx:"\
+"       test    dx,ax"\
+"       js      end_clip"\
+"ret_minint_ax:"\
+"       mov     ax,0x8000"\
+"end_clip:"\
+parm [ ax dx ] \
+modify [ ax dx ];
+
+#else
+
 static __inline short ClipToShort(int32_t x, int32_t fracBits)
 {
 	int16_t sign;
@@ -70,6 +113,8 @@ static __inline short ClipToShort(int32_t x, int32_t fracBits)
 
 	return (short)x;
 }
+
+#endif
 
 #define MC0M(x)	{ \
 	c1 = *coef;		coef++;		c2 = *coef;		coef++; \
