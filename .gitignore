@@ -1,5 +1,6 @@
 *.err
 *.exe
+!mp3.exe
 *.map
 *.obj
 *.sym

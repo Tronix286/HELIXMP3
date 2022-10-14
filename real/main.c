@@ -121,7 +121,7 @@ static void WriteWaveHeader(uint32_t total_bytes, uint32_t nChans, uint32_t samp
 	total_size = total_bytes * nChans * samprate * (bitsPerSample / 8);
 	if(
 		fwrite("RIFF", 1, 4, f) < 4 ||
-		!write_little_endian_uint32(f, total_size + 36) ||
+		!write_little_endian_uint32(f, total_size) ||
 		fwrite("WAVEfmt ", 1, 8, f) < 8 ||
 		!write_little_endian_uint32(f, 16) ||
 		!write_little_endian_uint16(f, 1) ||
@@ -131,7 +131,7 @@ static void WriteWaveHeader(uint32_t total_bytes, uint32_t nChans, uint32_t samp
 		!write_little_endian_uint16(f, (uint16_t)(nChans * (bitsPerSample / 8))) || /* block align */
 		!write_little_endian_uint16(f, (uint16_t)bitsPerSample) ||
 		fwrite("data", 1, 4, f) < 4 ||
-		!write_little_endian_uint32(f, total_size)
+		!write_little_endian_uint32(f, total_size-36)
 	) {
 		printf("ERROR: write error\n");
 	}
@@ -149,7 +149,7 @@ int main(int argc, char **argv)
 	time_t start_time,end_time;
 	char tmp[80];
 
-	printf("MP3 decoder 16bit v1.0      (c) Tronix 2022\n");
+	printf("MP3 decoder 16bit v1.01     (c) Tronix 2022\n");
 	printf("Helix MP3 decoder Copyright (c) 1995-2004 RealNetworks\n\n");
 
 	if (argc != 3) {
@@ -252,11 +252,11 @@ int main(int argc, char **argv)
 
 
 	MP3GetLastFrameInfo(hMP3Decoder, &mp3FrameInfo);
-	printf("\ntotal size = %lu\n",nFrames * mp3FrameInfo.outputSamps * (mp3FrameInfo.bitsPerSample / 8));
+	printf("\ntotal size = %lu\n",(nFrames * mp3FrameInfo.outputSamps * (mp3FrameInfo.bitsPerSample / 8))-44);
 
 	fseek(outfile, 0L, 0);         /*-- pos to header --*/
 	
-	WriteWaveHeader(nFrames * mp3FrameInfo.outputSamps * (mp3FrameInfo.bitsPerSample / 8), mp3FrameInfo.nChans, mp3FrameInfo.samprate, mp3FrameInfo.bitsPerSample, outfile);
+	WriteWaveHeader((nFrames * mp3FrameInfo.outputSamps * (mp3FrameInfo.bitsPerSample / 8))-44, mp3FrameInfo.nChans, mp3FrameInfo.samprate, mp3FrameInfo.bitsPerSample, outfile);
 
 	MP3FreeDecoder(hMP3Decoder);
 

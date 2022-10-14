@@ -30,24 +30,24 @@ static __inline short ClipToShortA(int32_t x);
 "	sar dx,1"\
 "	rcr ax,1"\
 \
-"	cmp     dx,-1"\
-"       jz      s_ax_to_all_bits_dx"\
-"       cmp     dx,0"\
-"       jl      ret_minint_ax"\
-"       ja      ret_maxint_ax"\
-"       test    ax,ax"\
-"       jns     end_clip"\
-"ret_maxint_ax:"\
-"       mov     ax,0x7FFF"\
-"       jmp     end_clip"\
-"s_ax_to_all_bits_dx:"\
-"       test    dx,ax"\
-"       js      end_clip"\
-"ret_minint_ax:"\
-"       mov     ax,0x8000"\
-"end_clip:"\
+"mov bx, dx"\
+"and bx, 0x8000"\
+"neg bx"\
+"sbb bx, bx"\
+"mov cx, dx"\
+"not cx"\
+"neg cx"\
+"sbb cx, cx"\
+"and bx, cx"\
+"and dx, cx"\
+"xor bx, 0x7fff"\
+"neg dx"\
+"sbb dx, dx"\
+"or ax, dx"\
+"and dx, bx"\
+"xor ax, dx"\
 parm [ ax dx ] \
-modify [ ax dx ];
+modify [ ax dx bx cx ];
 
 static __inline short ClipToShort(int32_t x, int32_t fracBits)
 {
