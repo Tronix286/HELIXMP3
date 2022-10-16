@@ -60,6 +60,8 @@
 
 #pragma warning( disable : 4035 )	/* complains about inline asm not returning a value */
 
+#pragma disable_message ( 107 )	/* complains about inline asm not returning a value */
+
 static __inline int MULSHIFT32(int x, int y)	
 {
 	__asm {

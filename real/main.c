@@ -47,6 +47,9 @@
 #include <time.h>
 
 #include "mp3dec.h"
+#ifdef PROFILE
+#include "ztimer.h"
+#endif
 
 #define READBUF_SIZE		(1024L*16)	/* feel free to change this, but keep big enough for >= one frame at high bitrates */
 //#define MAX_ARM_FRAMES		100

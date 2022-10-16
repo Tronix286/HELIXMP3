@@ -48,8 +48,18 @@
 
 //#define PROFILE
 #ifdef PROFILE
+#include "ztimer.h"
 #include "time.h"
 #include <stdio.h>
+
+void ReportTime(char*s, ulong count)
+{
+	ulong	secs;
+
+	secs = count / 1000000L;
+	count = count - secs * 1000000L;
+	printf("%s %lu.%06lu seconds\n",s,secs,count);
+}
 #endif
 
 /**************************************************************************************
@@ -291,10 +301,6 @@ int32_t MP3Decode(HMP3Decoder hMP3Decoder, unsigned char **inbuf, int32_t *bytes
 	unsigned char *mainPtr;
 	MP3DecInfo *mp3DecInfo = (MP3DecInfo *)hMP3Decoder;
 	
-	#ifdef PROFILE
-	time_t stime;
-	#endif
-
 	if (!mp3DecInfo)
 		return ERR_MP3_NULL_POINTER;
 
@@ -305,7 +311,7 @@ int32_t MP3Decode(HMP3Decoder hMP3Decoder, unsigned char **inbuf, int32_t *bytes
 	*inbuf += fhBytes;
 	
 #ifdef PROFILE
-	stime = time(NULL);
+	PZTimerOn();
 #endif
 	/* unpack side info */
 	siBytes = UnpackSideInfo(mp3DecInfo, *inbuf);
@@ -316,8 +322,8 @@ int32_t MP3Decode(HMP3Decoder hMP3Decoder, unsigned char **inbuf, int32_t *bytes
 	*inbuf += siBytes;
 	*bytesLeft -= (fhBytes + siBytes);
 #ifdef PROFILE
-	stime = time(NULL) - stime;
-	printf("UnpackSideInfo: %li ms\n", stime);
+	PZTimerOff();
+	ReportTime("UnpackSideInfo:",PZTimerCount());
 #endif
 	
 	
@@ -364,7 +370,7 @@ int32_t MP3Decode(HMP3Decoder hMP3Decoder, unsigned char **inbuf, int32_t *bytes
 		}
 
 #ifdef PROFILE
-	stime = time(NULL);
+	PZTimerOn();
 #endif
 		/* fill main data buffer with enough new data for this frame */
 		if (mp3DecInfo->mainDataBytes >= mp3DecInfo->mainDataBegin) {
@@ -386,8 +392,8 @@ int32_t MP3Decode(HMP3Decoder hMP3Decoder, unsigned char **inbuf, int32_t *bytes
 			return ERR_MP3_MAINDATA_UNDERFLOW;
 		}
 #ifdef PROFILE
-	stime = time(NULL) - stime;
-	printf("data buffer filling: %li ms\n", stime);
+	PZTimerOff();
+	ReportTime("data buffer filling:", PZTimerCount());
 #endif
 
 	}
@@ -399,14 +405,14 @@ int32_t MP3Decode(HMP3Decoder hMP3Decoder, unsigned char **inbuf, int32_t *bytes
 		for (ch = 0; ch < mp3DecInfo->nChans; ch++) {
 			
 			#ifdef PROFILE
-				stime = time(NULL);
+				PZTimerOn();
 			#endif
 			/* unpack scale factors and compute size of scale factor block */
 			prevBitOffset = bitOffset;
 			offset = UnpackScaleFactors(mp3DecInfo, mainPtr, &bitOffset, mainBits, gr, ch);
 			#ifdef PROFILE
-				stime = time(NULL) - stime;
-				printf("UnpackScaleFactors: %li ms\n", stime);
+				PZTimerOff();
+				ReportTime("UnpackScaleFactors:", PZTimerCount());
 			#endif
 
 			sfBlockBits = 8*offset - prevBitOffset + bitOffset;
@@ -420,7 +426,7 @@ int32_t MP3Decode(HMP3Decoder hMP3Decoder, unsigned char **inbuf, int32_t *bytes
 			}
 
 			#ifdef PROFILE
-				stime = time(NULL);
+				PZTimerOn();
 			#endif
 			/* decode Huffman code words */
 			prevBitOffset = bitOffset;
@@ -430,8 +436,8 @@ int32_t MP3Decode(HMP3Decoder hMP3Decoder, unsigned char **inbuf, int32_t *bytes
 				return ERR_MP3_INVALID_HUFFCODES;
 			}
 			#ifdef PROFILE
-				stime = time(NULL) - stime;
-				printf("Huffman: %li ms\n", stime);
+				PZTimerOff();
+				ReportTime("Huffman:", PZTimerCount());
 			#endif
 
 			mainPtr += offset;
@@ -439,7 +445,7 @@ int32_t MP3Decode(HMP3Decoder hMP3Decoder, unsigned char **inbuf, int32_t *bytes
 		}
 		
 		#ifdef PROFILE
-			stime = time(NULL);
+			PZTimerOn();
 		#endif
 		/* dequantize coefficients, decode stereo, reorder short blocks */
 		if (Dequantize(mp3DecInfo, gr) < 0) {
@@ -447,28 +453,28 @@ int32_t MP3Decode(HMP3Decoder hMP3Decoder, unsigned char **inbuf, int32_t *bytes
 			return ERR_MP3_INVALID_DEQUANTIZE;			
 		}
 		#ifdef PROFILE
-			stime = time(NULL) - stime;
-			printf("Dequantize: %li ms\n", stime);
+			PZTimerOff();
+			ReportTime("Dequantize:", PZTimerCount());
 		#endif
 
 		/* alias reduction, inverse MDCT, overlap-add, frequency inversion */
 		for (ch = 0; ch < mp3DecInfo->nChans; ch++)
 		{
 		#ifdef PROFILE
-			stime = time(NULL);
+			PZTimerOn();
 		#endif
 			if (IMDCT(mp3DecInfo, gr, ch) < 0) {
 				MP3ClearBadFrame(mp3DecInfo, outbuf);
 				return ERR_MP3_INVALID_IMDCT;			
 			}
 		#ifdef PROFILE
-			stime = time(NULL) - stime;
-			printf("IMDCT: %li ms\n", stime);
+			PZTimerOff();
+			ReportTime("IMDCT:", PZTimerCount());
 		#endif
 		}
 		
 		#ifdef PROFILE
-			stime = time(NULL);
+			PZTimerOn();
 		#endif
 		/* subband transform - if stereo, interleaves pcm LRLRLR */
 		if (Subband(mp3DecInfo, outbuf + gr*mp3DecInfo->nGranSamps*mp3DecInfo->nChans) < 0) {
@@ -476,8 +482,8 @@ int32_t MP3Decode(HMP3Decoder hMP3Decoder, unsigned char **inbuf, int32_t *bytes
 			return ERR_MP3_INVALID_SUBBAND;			
 		}
 		#ifdef PROFILE
-			stime = time(NULL) - stime;
-			printf("Subband: %li ms\n", stime);
+			PZTimerOff();
+			ReportTime("Subband:", PZTimerCount());
 		#endif
 		
 	}

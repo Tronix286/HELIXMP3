@@ -3,7 +3,7 @@
 #include <stdint.h>
 #include <time.h>
 #define PUREC
-#include "assembly.h"
+//#include "assembly.h"
 
 
 	int32_t x=64000;

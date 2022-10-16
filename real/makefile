@@ -28,7 +28,7 @@
 #CCOPTS = $(EXTERNOPT) -onatx -oh -oi -ei -zp8 -2 -fpi87 -fp2 -ml -s -omaxet -i=include -i=.\..\..\include -za99 -dHAVE_CONFIG_H -dFLAC__NO_ASM
 
 # no fpu build
-CCOPTS = $(EXTERNOPT) -ml -oneatx -oh -oi -ei -zp4 -0 -fpi -i=.\..\pub -dBITS16
+CCOPTS = $(EXTERNOPT) -d1 -ml -oneatx -oh -oi -ei -zp4 -0 -fpi -i=.\..\pub -dBITS16
 
 #//-omaxet
 #wcc fixed.obj -i=include -i=.\..\..\include -za99
@@ -73,6 +73,7 @@ $(PRG): $(HELIX_OBJS) $(MP3_OBJS)
   	%write mp3.lnk SYSTEM DOS
   	%write mp3.lnk OPTION MAP
   	%write mp3.lnk OPTION STACK=30k
+	%write mp3.lnk lib ztimer_l.lib
   	%write mp3.lnk FILE   {$(HELIX_OBJS) $(MP3_OBJS)}
 	wlink @mp3.lnk
 
@@ -83,7 +84,6 @@ DELCMD = rm -f
 !endif
 
 clean : .SYMBOLIC
- $(DELCMD) *.lib
  $(DELCMD) *.err
  $(DELCMD) *.obj
  $(DELCMD) *.lst

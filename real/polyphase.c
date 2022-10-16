@@ -156,7 +156,7 @@ static __inline short ClipToShort(int32_t x, int32_t fracBits)
  **************************************************************************************/
 void PolyphaseMono(short *pcm, int32_t *vbuf, const int32_t *coefBase)
 {	
-	int32_t i;
+	int16_t i;
 	const int32_t *coef;
 	int32_t *vb1;
 	int32_t vLo, vHi, c1, c2;
@@ -269,7 +269,7 @@ void PolyphaseMono(short *pcm, int32_t *vbuf, const int32_t *coefBase)
  **************************************************************************************/
 void PolyphaseStereo(short *pcm, int32_t *vbuf, const int32_t *coefBase)
 {
-	int32_t i;
+	int16_t i;
 	const int32_t *coef;
 	int32_t *vb1;
 	int32_t vLo, vHi, c1, c2;
